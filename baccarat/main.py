@@ -1,5 +1,6 @@
 import card
 import os
+import argparse
 
 class Payout:
 	def __init__(self):
@@ -252,31 +253,52 @@ def print_results(game):
 	print(f"Banker Only Total won : {game.tracker.banker_only_percent()}%")
 
 if __name__ == "__main__":
-	game = BaccaratGame(num_decks=8)
-	while True:
-		j = 0
-		while j < 1_000_000:
-			game.setup_game()
+	parser = argparse.ArgumentParser()
+	parser.add_argument("--verbose", help="print game output",
+					 	action='store_true', default=False)
+	parser.add_argument("--input", help="Press enter between turns",
+						action='store_true', default=False)
+	parser.add_argument("--num_decks", help="How many complete decks in shoe",
+						default=8, type=int)
+	parser.add_argument("--shoe_limit", help="number of shoes before reporting",
+						default=10, type=int)
+	parser.add_argument("--shoe_results", help="Show end of shoe results",
+						action='store_true', default=False)
+	
+	args = parser.parse_args()
+	verbose = args.verbose
+	inpt = args.input
+	shoe_size = args.num_decks
+	shoe_limit = args.shoe_limit
+	shoe_results = args.shoe_results
+
+	game = BaccaratGame(shoe_size, verbose)
+	shoes = 0
+	while shoes < shoe_limit:
+		game.setup_game()
+		if inpt:
 			print("Press enter/return key to continue")
 			input()
-			while game.deck.remaining() > 30:
-				if game.verbose:
-					os.system('clear')
-				winner, payout = game.baccarat()
-				game.score()
+		while game.deck.remaining() > 30:
+			if game.verbose:
+				os.system('clear')
+			winner, payout = game.baccarat()
+			game.score()
+			if inpt:
 				print("Press enter/return key to continue")
 				input()
-				j += 1
-
-			if game.verbose:
-				print(f"Results of {game.tracker.shoe} shoe:")
-				print(f"Player only bets payout : {game.tracker.player_only_payout}")
-				print(f"Banker only bets payout : {game.tracker.banker_only_payout}")
-				print(f"Banker only bets with half payout : {game.tracker.banker_only_half_payout}")
+		
+		shoes += 1
+		if shoe_results:
+			print(f"Results of {game.tracker.shoe} shoe:")
+			print(f"Player only bets payout : {game.tracker.player_only_payout}")
+			print(f"Banker only bets payout : {game.tracker.banker_only_payout}")
+			print(f"Banker only bets with half payout : {game.tracker.banker_only_half_payout}")
+			if verbose:
 				print_results(game)
+
+		if inpt:
 			print("Press enter/return key to continue")
 			input()
 
-		print_results(game)
-		print("Press enter/return key to continue")
-		input()
+	print_results(game)
