@@ -10,6 +10,10 @@ class Payout:
 		self.total_games = 0
 		self.banker_only = 0
 		self.player_only = 0
+		self.banker_only_payout = 0
+		self.banker_only_half_payout = 0
+		self.player_only_payout = 0
+		self.shoe = 0
 
 	def banker_win_percent(self):
 		return f"{(self.banker_wins / self.total_games) * 100:.02f}"
@@ -57,15 +61,20 @@ class BaccaratGame:
 
 	def setup_game(self):
 		self.deck = card.Deck(self.num_decks)
+		self.tracker.shoe += 1
+		self.tracker.player_only_payout = 0
+		self.tracker.banker_only_payout = 0
+		self.tracker.banker_only_half_payout = 0
 		if self.verbose:
 			os.system('clear')
-			print("Setting up game...")
+			print(f"Setting up game with the {self.tracker.shoe} shoe...")
 			print("Shuffling...")
 
 		self.deck.shuffle()
 		if self.verbose:
 			print("All shuffled")
 			print("Burning cards...")
+
 		self.deck.burn()
 
 	def baccarat(self):
@@ -129,6 +138,9 @@ class BaccaratGame:
 			self.tracker.player_wins += 1
 			self.tracker.banker_only -= 1
 			self.tracker.player_only += 1
+
+			self.tracker.player_only_payout += 1
+			self.tracker.banker_only_payout -= 1
 		elif banker_total > player_total:
 			if self.verbose:
 				print(f"Banker wins with {self.players['banker'].get_hand()} "\
@@ -139,16 +151,25 @@ class BaccaratGame:
 				self.tracker.banker_half_payout += 1
 				self.tracker.banker_only += 0.5
 				self.tracker.player_only -= 1
+
+				self.tracker.player_only_payout -= 1
+				self.tracker.banker_only_payout += 0.5
+				self.tracker.banker_only_half_payout += 1
 			else:
 				self.tracker.banker_wins += 1
 				self.tracker.player_only -= 1
 				self.tracker.banker_only += 1
+
+				self.tracker.banker_only_payout += 1
+				self.tracker.player_only_payout -= 1
 				winner = ('banker', 1, 1)
 		else:
 			if self.verbose:
 				print(f"Push. Player total = {player_total}. "\
 					  f"Banker total = {banker_total}")
 			self.tracker.ties += 1
+			self.tracker.banker_only_payout += 0
+			self.tracker.player_only_payout += 0
 			winner = (None, 0, 0)
 
 		if self.verbose:
@@ -238,6 +259,10 @@ if __name__ == "__main__":
 				j += 1
 
 			if game.verbose:
+				print(f"Results of {game.tracker.shoe} shoe:")
+				print(f"Player only bets payout : {game.tracker.player_only_payout}")
+				print(f"Banker only bets payout : {game.tracker.banker_only_payout}")
+				print(f"Banker only bets with half payout : {game.tracker.banker_only_half_payout}")
 				print(f"Cards remaining in deck:\n{[card.abbreviation for card in game.deck.deck]}")
 				print(f"Cards in discard:\n{[card.abbreviation for card in game.deck.discard]}")
 				print(f"Cards burned {len(game.deck.burned_cards)}:\n{[card.abbreviation for card in game.deck.burned_cards]}")
