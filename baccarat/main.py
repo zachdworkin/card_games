@@ -1,6 +1,37 @@
 import card
-import os
 import argparse
+import os, shutil
+import pandas as pd
+import matplotlib.pyplot as plt
+
+class Graph:
+	def __init__(self, main=False):
+		self.shoe = 1
+		self.player = []
+		self.banker = []
+		self.columns = ['Current Payout']
+		self.output_location = f"{os.getcwd()}/last_run"
+		self.main = main
+		if main:
+			self.name = f"graph_main"
+		else:
+			self.name = f"graph_shoe_{self.shoe}"
+
+	def graphical(self):
+		if self.main:
+			self.name = f"graph_main"
+		else:
+			self.name = f"graph_shoe_{self.shoe}"
+
+		plt.figure(0)
+		plt.plot(range(0, len(self.player)), self.player)
+		plt.savefig(f"{self.output_location}/player_{self.name}.png")
+		plt.clf()
+
+		plt.figure(1)
+		plt.plot(range(0, len(self.banker)), self.banker)
+		plt.savefig(f"{self.output_location}/banker_{self.name}.png")
+		plt.clf()
 
 class Payout:
 	def __init__(self):
@@ -57,12 +88,15 @@ class BaccaratGame:
 			'banker'	: Player("Banker")
 		}
 		self.tracker = Payout()
+		self.graph = Graph()
 		if self.verbose:
 			print(f"Created a game with {len(self.players)} players")
 
 	def setup_game(self):
 		self.deck = card.Deck(self.num_decks)
+		self.graph = Graph()
 		self.tracker.shoe += 1
+		self.graph.shoe = self.tracker.shoe
 		self.tracker.player_only_payout = 0
 		self.tracker.banker_only_payout = 0
 		self.tracker.banker_only_half_payout = 0
@@ -173,6 +207,8 @@ class BaccaratGame:
 			self.tracker.player_only_payout += 0
 			winner = (None, 0, 0)
 
+		self.graph.player.append(self.tracker.player_only_payout)
+		self.graph.banker.append(self.tracker.banker_only_payout)
 		if self.verbose:
 			print()
 		return winner
@@ -253,6 +289,8 @@ def print_results(game):
 	print(f"Banker Only Total won : {game.tracker.banker_only_percent()}%")
 
 if __name__ == "__main__":
+	shutil.rmtree(f"{os.getcwd()}/last_run")
+	os.mkdir(f"{os.getcwd()}/last_run")
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--verbose", help="print game output",
 					 	action='store_true', default=False)
@@ -264,6 +302,8 @@ if __name__ == "__main__":
 						default=10, type=int)
 	parser.add_argument("--shoe_results", help="Show end of shoe results",
 						action='store_true', default=False)
+	parser.add_argument("--graph", help="Create graphs for each shoe",
+						action='store_true', default=False)
 	
 	args = parser.parse_args()
 	verbose = args.verbose
@@ -271,8 +311,10 @@ if __name__ == "__main__":
 	shoe_size = args.num_decks
 	shoe_limit = args.shoe_limit
 	shoe_results = args.shoe_results
+	graph = args.graph
 
 	game = BaccaratGame(shoe_size, verbose)
+	gr = Graph(main=True)
 	shoes = 0
 	while shoes < shoe_limit:
 		game.setup_game()
@@ -287,8 +329,13 @@ if __name__ == "__main__":
 			if inpt:
 				print("Press enter/return key to continue")
 				input()
-		
+
 		shoes += 1
+		gr.player.append(game.tracker.player_only_payout)
+		gr.banker.append(game.tracker.banker_only_payout)
+		if graph:
+			game.graph.graphical()
+
 		if shoe_results:
 			print(f"Results of {game.tracker.shoe} shoe:")
 			print(f"Player only bets payout : {game.tracker.player_only_payout}")
@@ -302,3 +349,5 @@ if __name__ == "__main__":
 			input()
 
 	print_results(game)
+	if graph:
+		gr.graphical()
