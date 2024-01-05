@@ -1,6 +1,34 @@
 import card
 import os
 
+class Payout:
+	def __init__(self):
+		self.player_wins = 0
+		self.banker_wins = 0
+		self.ties = 0
+		self.banker_half_payout = 0
+		self.total_games = 0
+		self.banker_only = 0
+		self.player_only = 0
+
+	def banker_win_percent(self):
+		return f"{(self.banker_wins / self.total_games) * 100:.02f}"
+
+	def player_win_percent(self):
+		return f"{(self.player_wins / self.total_games) * 100:.02f}"
+
+	def halved_win_percent(self):
+		return f"{(self.banker_half_payout / self.total_games) * 100:.02f}"
+
+	def tied_percent(self):
+		return f"{(self.ties / self.total_games) * 100:.02f}"
+
+	def banker_only_percent(self):
+		return f"{((self.banker_wins + self.banker_half_payout) / self.total_games) * 100:.02f}"
+
+	def player_only_percent(self):
+		return f"{((self.player_wins) / self.total_games) * 100:.02f}"
+
 class Player:
 	def __init__(self, name: str):
 		self.hand = []
@@ -23,6 +51,7 @@ class BaccaratGame:
 			'player'	: Player("Player"),
 			'banker'	: Player("Banker")
 		}
+		self.tracker = Payout()
 		if self.verbose:
 			print(f"Created a game with {len(self.players)} players")
 
@@ -97,18 +126,29 @@ class BaccaratGame:
 				print(f"Player wins with {self.players['player'].get_hand()} "\
 						f"totaling {player_total}")
 			winner = ('player', 1, -1)
+			self.tracker.player_wins += 1
+			self.tracker.banker_only -= 1
+			self.tracker.player_only += 1
 		elif banker_total > player_total:
 			if self.verbose:
 				print(f"Banker wins with {self.players['banker'].get_hand()} "\
 						f"totaling {banker_total}")
 			if banker_total == 6:
 				winner = ('banker', 0.5, 0.5)
+				self.tracker.banker_wins += 1
+				self.tracker.banker_half_payout += 1
+				self.tracker.banker_only += 0.5
+				self.tracker.player_only -= 1
 			else:
+				self.tracker.banker_wins += 1
+				self.tracker.player_only -= 1
+				self.tracker.banker_only += 1
 				winner = ('banker', 1, 1)
 		else:
 			if self.verbose:
 				print(f"Push. Player total = {player_total}. "\
-						f"Banker total = {banker_total}")
+					  f"Banker total = {banker_total}")
+			self.tracker.ties += 1
 			winner = (None, 0, 0)
 
 		if self.verbose:
@@ -182,33 +222,19 @@ class BaccaratGame:
 
 if __name__ == "__main__":
 	game = BaccaratGame(num_decks=8)
-	i = 1
-	total_payout = 0
-	halved_payouts = 0
-	tied_games = 0
-	total_won = 0
 	while True:
 		j = 0
-		while j < 100_000:
+		while j < 1_000_000:
 			game.setup_game()
 			print("Press enter/return key to continue")
 			input()
 			while game.deck.remaining() > 30:
 				if game.verbose:
 					os.system('clear')
-					print(f"Starting game {i}.\n")
 				winner, payout = game.baccarat()
 				game.score()
-				total_payout += payout
-				if payout == 0.5:
-					halved_payouts += 1
-				if not payout:
-					tied_games += 1
-				if payout > 0:
-					total_won += payout
 				print("Press enter/return key to continue")
 				input()
-				i += 1
 				j += 1
 
 			if game.verbose:
@@ -219,10 +245,12 @@ if __name__ == "__main__":
 			input()
 
 		print()
-		print(f"Total games = {i}")
-		print(f"Total payout = {total_payout} : {(total_won / i) * 100:.02f}%")
-		print(f"Total payout halved = {halved_payouts} : {(halved_payouts / i) * 100:.02f}%")
-		print(f"Total tied games = {tied_games} : {(tied_games / i) * 100:.02f}%")
-		print(f"Total won or tied : {((total_won + tied_games) / i) * 100:.02f}%")
-		print("Press enter/return key to continue")
-		input()
+		print(f"Total games = {game.tracker.total_games}")
+		print(f"Player win = {game.tracker.banker_wins} : {game.tracker.banker_win_percent()}%")
+		print(f"Banker win = {game.tracker.player_wins} : {game.tracker.player_win_percent()}%")
+		print(f"Total payout halved = {game.tracker.banker_half_payout} : {game.tracker.halved_win_percent()}%")
+		print(f"Total tied games = {game.tracker.ties} : {game.tracker.tied_percent()}%")
+		print(f"Player Only Total won : {game.tracker.player_only_percent()}%")
+		print(f"Banker Only Total won : {game.tracker.banker_only_percent()}%")
+		# print("Press enter/return key to continue")
+		# input()
