@@ -3,6 +3,7 @@ import argparse
 import os, shutil
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 class Graph:
 	def __init__(self, main=False):
@@ -278,7 +279,7 @@ class BaccaratGame:
 		cards = [card.rank if card.rank < 10 else 10 for card in hand]
 		return sum(cards) % 10
 
-def print_results(game):
+def print_results(game, gr):
 	print()
 	print(f"Total games = {game.tracker.total_games}")
 	print(f"Player win = {game.tracker.banker_wins} : {game.tracker.banker_win_percent()}%")
@@ -287,10 +288,10 @@ def print_results(game):
 	print(f"Total tied games = {game.tracker.ties} : {game.tracker.tied_percent()}%")
 	print(f"Player Only Total won : {game.tracker.player_only_percent()}%")
 	print(f"Banker Only Total won : {game.tracker.banker_only_percent()}%")
+	print(f"Player Only Bet Expected Payout : {sum(gr.player)}")
+	print(f"Banker Only Bet Expected Payout : {sum(gr.banker)}")
 
 if __name__ == "__main__":
-	shutil.rmtree(f"{os.getcwd()}/last_run")
-	os.mkdir(f"{os.getcwd()}/last_run")
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--verbose", help="print game output",
 					 	action='store_true', default=False)
@@ -304,6 +305,8 @@ if __name__ == "__main__":
 						action='store_true', default=False)
 	parser.add_argument("--graph", help="Create graphs for each shoe",
 						action='store_true', default=False)
+	parser.add_argument("--export_results", help="Create csv files of result",
+						action='store_true', default=False)
 	
 	args = parser.parse_args()
 	verbose = args.verbose
@@ -312,6 +315,11 @@ if __name__ == "__main__":
 	shoe_limit = args.shoe_limit
 	shoe_results = args.shoe_results
 	graph = args.graph
+	export_results = args.export_results
+
+	if graph or export_results:
+		shutil.rmtree(f"{os.getcwd()}/last_run")
+		os.mkdir(f"{os.getcwd()}/last_run")
 
 	game = BaccaratGame(shoe_size, verbose)
 	gr = Graph(main=True)
@@ -342,12 +350,27 @@ if __name__ == "__main__":
 			print(f"Banker only bets payout : {game.tracker.banker_only_payout}")
 			print(f"Banker only bets with half payout : {game.tracker.banker_only_half_payout}")
 			if verbose:
-				print_results(game)
+				print_results(game, gr)
 
 		if inpt:
 			print("Press enter/return key to continue")
 			input()
 
-	print_results(game)
+	print_results(game, gr)
 	if graph:
 		gr.graphical()
+	if export_results:
+		p = np.array(gr.player)
+		b = np.array(gr.banker)
+		np.savetxt(
+				f"{os.getcwd()}/last_run/player.csv",
+				p,
+				delimiter = ", ",
+				fmt = '% s'
+		)
+		np.savetxt(
+				f"{os.getcwd()}/last_run/banker.csv",
+				b,
+				delimiter = ", ",
+				fmt = '% s'
+		)
