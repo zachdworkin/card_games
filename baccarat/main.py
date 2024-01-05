@@ -241,6 +241,16 @@ class BaccaratGame:
 		cards = [card.rank if card.rank < 10 else 10 for card in hand]
 		return sum(cards) % 10
 
+def print_results(game):
+	print()
+	print(f"Total games = {game.tracker.total_games}")
+	print(f"Player win = {game.tracker.banker_wins} : {game.tracker.banker_win_percent()}%")
+	print(f"Banker win = {game.tracker.player_wins} : {game.tracker.player_win_percent()}%")
+	print(f"Total payout halved = {game.tracker.banker_half_payout} : {game.tracker.halved_win_percent()}%")
+	print(f"Total tied games = {game.tracker.ties} : {game.tracker.tied_percent()}%")
+	print(f"Player Only Total won : {game.tracker.player_only_percent()}%")
+	print(f"Banker Only Total won : {game.tracker.banker_only_percent()}%")
+
 if __name__ == "__main__":
 	game = BaccaratGame(num_decks=8)
 	while True:
@@ -263,19 +273,10 @@ if __name__ == "__main__":
 				print(f"Player only bets payout : {game.tracker.player_only_payout}")
 				print(f"Banker only bets payout : {game.tracker.banker_only_payout}")
 				print(f"Banker only bets with half payout : {game.tracker.banker_only_half_payout}")
-				print(f"Cards remaining in deck:\n{[card.abbreviation for card in game.deck.deck]}")
-				print(f"Cards in discard:\n{[card.abbreviation for card in game.deck.discard]}")
-				print(f"Cards burned {len(game.deck.burned_cards)}:\n{[card.abbreviation for card in game.deck.burned_cards]}")
+				print_results(game)
 			print("Press enter/return key to continue")
 			input()
 
-		print()
-		print(f"Total games = {game.tracker.total_games}")
-		print(f"Player win = {game.tracker.banker_wins} : {game.tracker.banker_win_percent()}%")
-		print(f"Banker win = {game.tracker.player_wins} : {game.tracker.player_win_percent()}%")
-		print(f"Total payout halved = {game.tracker.banker_half_payout} : {game.tracker.halved_win_percent()}%")
-		print(f"Total tied games = {game.tracker.ties} : {game.tracker.tied_percent()}%")
-		print(f"Player Only Total won : {game.tracker.player_only_percent()}%")
-		print(f"Banker Only Total won : {game.tracker.banker_only_percent()}%")
-		# print("Press enter/return key to continue")
-		# input()
+		print_results(game)
+		print("Press enter/return key to continue")
+		input()
